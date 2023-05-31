@@ -19,8 +19,7 @@ use tui::{
 };
 
 use crate::{
-    util::{unlock_process, preview},
-    App
+    App, process::ProcessManager
 };
 
 
@@ -47,6 +46,7 @@ fn run_app<B: Backend>(
     tick_rate: Duration,
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
+    let mut process_mgr = ProcessManager::new();
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
@@ -56,7 +56,7 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => {
-                        unlock_process();
+                        process_mgr.try_kill();
                         return Ok(())
                     },
                     KeyCode::Down => app.items.next(),
@@ -64,7 +64,7 @@ fn run_app<B: Backend>(
                     KeyCode::Enter => {
                         let index = app.items.state.selected().unwrap();
                         let paper = &app.items.items[index].0;
-                        preview(paper);
+                        process_mgr.spawn(paper);
                     },
                     _ => {}
                 }
